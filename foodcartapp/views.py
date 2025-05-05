@@ -3,6 +3,7 @@ from django.templatetags.static import static
 
 import json
 from .models import Product, Order, OrderItem
+from rest_framework.decorators import api_view
 
 
 def banners_list_api(request):
@@ -56,10 +57,11 @@ def product_list_api(request):
         'indent': 4,
     })
 
-
+@api_view(['POST'])
 def register_order(request):
     try:
-        serialized_order = json.loads(request.body.decode())
+        serialized_order = request.data
+        print(serialized_order)
         products = serialized_order['products']
         first_name = serialized_order['firstname']
         last_name = serialized_order['lastname']
