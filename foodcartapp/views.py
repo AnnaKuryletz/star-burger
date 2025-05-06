@@ -1,9 +1,11 @@
 from django.http import JsonResponse
 from django.templatetags.static import static
 
-import json
+
 from .models import Product, Order, OrderItem
 from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from rest_framework import status
 
 
 def banners_list_api(request):
@@ -59,32 +61,46 @@ def product_list_api(request):
 
 @api_view(['POST'])
 def register_order(request):
+    serialized_order = request.data
+
+    if 'products' not in serialized_order:
+        return Response({'products': 'Обязательное поле.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    products = serialized_order['products']
+
+    if products is None:
+        return Response({'products': 'Это поле не может быть пустым.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    if not isinstance(products, list):
+        return Response({'products': f'Ожидался список со значениями, но был получен «{type(products).__name__}».'},
+                        status=status.HTTP_400_BAD_REQUEST)
+
+    if not products:
+        return Response({'products': 'Этот список не может быть пустым.'}, status=status.HTTP_400_BAD_REQUEST)
+
     try:
-        serialized_order = request.data
-        print(serialized_order)
-        products = serialized_order['products']
         first_name = serialized_order['firstname']
         last_name = serialized_order['lastname']
         address = serialized_order['address']
         phone_number = serialized_order['phonenumber']
+    except (KeyError, TypeError):
+        return Response({'error': 'Некорректные данные заказа'}, status=status.HTTP_400_BAD_REQUEST)
 
-        order = Order(
+    order = Order.objects.create(
         first_name=first_name,
         last_name=last_name,
         address=address,
         phone_number=phone_number,
-        )
-        order.save()
+    )
 
-        for product in products:
+    for product in products:
+        try:
             OrderItem.objects.create(
-                order_id=order.id,
+                order=order,
                 product_id=product['product'],
-                quantity=product['quantity'],
+                quantity=product['quantity']
             )
+        except KeyError:
+            return Response({'error': 'Некорректные данные продукта'}, status=status.HTTP_400_BAD_REQUEST)
 
-    except ValueError:
-        return JsonResponse({
-            'error': 'bla bla bla',
-        })
-    return JsonResponse({})
+    return Response({'message': 'Заказ успешно создан'}, status=status.HTTP_201_CREATED)
