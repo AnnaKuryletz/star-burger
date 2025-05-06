@@ -1,7 +1,7 @@
 from django.http import JsonResponse
 from django.templatetags.static import static
 from .serializers import OrderSerializer
-
+from django.db import transaction
 
 from .models import Product, Order, OrderItem
 from rest_framework.decorators import api_view
@@ -73,7 +73,7 @@ def product_list_api(request):
 
 PHONE_REGEX = r"^\+79\d{9}$"
 
-
+@transaction.atomic
 @api_view(["POST"])
 def register_order(request):
     serializer = OrderSerializer(data=request.data)
