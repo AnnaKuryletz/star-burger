@@ -97,4 +97,6 @@ def register_order(request):
             order=order, product=product["product"], quantity=product["quantity"]
         )
 
-    return Response({"message": "Заказ успешно создан"}, status=status.HTTP_201_CREATED)
+    order_serializer = OrderSerializer(order)
+
+    return Response(order_serializer.data, status=status.HTTP_201_CREATED)
