@@ -124,15 +124,15 @@ class RestaurantMenuItem(models.Model):
     
 
 class Order(models.Model):
-    first_name = models.CharField(
+    firstname = models.CharField(
         'имя',
         max_length=50
     )
-    last_name = models.CharField(
+    lastname = models.CharField(
         'фамилия',
         max_length=50
     )
-    phone_number = PhoneNumberField(
+    phonenumber = PhoneNumberField(
         'телефон',
         db_index=True
     )
@@ -152,7 +152,7 @@ class Order(models.Model):
         ordering = ['-created_at']
 
     def __str__(self):
-        return f'Заказ #{self.id} — {self.first_name} {self.last_name}'
+        return f'Заказ #{self.id} — {self.firstname} {self.lastname}'
     
 
 class OrderItem(models.Model):
