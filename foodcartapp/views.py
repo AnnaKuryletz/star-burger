@@ -94,7 +94,7 @@ def register_order(request):
     )
     for product in products_list:
         OrderItem.objects.create(
-            order=order, product=product["product"], quantity=product["quantity"]
+            order=order, product=product["product"], quantity=product["quantity"], price=product["product"].price,
         )
 
     order_serializer = OrderSerializer(order)

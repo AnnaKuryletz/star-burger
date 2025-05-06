@@ -2,6 +2,7 @@ from django.db import models
 from django.core.validators import MinValueValidator
 from phonenumber_field.modelfields import PhoneNumberField
 from django.db.models import Sum, F, DecimalField
+from decimal import Decimal
 
 
 class OrderQuerySet(models.QuerySet):
@@ -78,6 +79,8 @@ class Product(models.Model):
         'цена',
         max_digits=8,
         decimal_places=2,
+        null=False,
+        blank=False,
         validators=[MinValueValidator(0)]
     )
     image = models.ImageField(
@@ -187,7 +190,10 @@ class OrderItem(models.Model):
     price = models.DecimalField(
         'цена за единицу',
         max_digits=8,
-        decimal_places=2
+        decimal_places=2,
+        null=False,
+        blank=False,
+        validators=[MinValueValidator(Decimal('0.01'))]
     )
 
     class Meta:
