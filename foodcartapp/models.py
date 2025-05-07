@@ -3,6 +3,7 @@ from decimal import Decimal
 from django.core.validators import MinValueValidator
 from django.db import models
 from django.db.models import DecimalField, F, Sum
+from django.utils import timezone
 
 from phonenumber_field.modelfields import PhoneNumberField
 
@@ -140,18 +141,21 @@ class RestaurantMenuItem(models.Model):
     
 
 class Order(models.Model):
-    class Status(models.TextChoices):
-        RAW = 'raw', 'Необработанный'
-        CONFIRMED = 'confirmed', 'Подтверждён'
-        ASSEMBLING = 'assembling', 'Собирается'
-        DELIVERING = 'delivering', 'Доставляется'
-        DONE = 'done', 'Выполнен'
-
+    ORDER_STATUS = [
+        ('raw', 'Необработанный'),
+        ('in_progress', 'Отправлен на сборку'),
+        ('in_delivery', 'Отправлен на доставку'),
+        ('completed', 'Выполнен'),
+    ]
+    PAYMENT_METHOD = [
+        ('cash', 'Наличные'),
+        ('online', 'Электронно'),
+    ]
     status = models.CharField(
         verbose_name='статус',
         max_length=20,
-        choices=Status.choices,
-        default=Status.RAW,
+        choices=ORDER_STATUS,
+        default='raw',
         db_index=True,
     )
     comment = models.TextField(
@@ -175,17 +179,37 @@ class Order(models.Model):
         'адрес доставки',
         max_length=255
     )
-    created_at = models.DateTimeField(
-        'создан',
-        auto_now_add=True,
+    payment_method = models.CharField(
+        max_length=20,
+        choices=PAYMENT_METHOD,
+        default='не оплачено',
+        db_index=True,
+        verbose_name='Способ оплаты',
+    )
+    registered_at = models.DateTimeField(
+        default=timezone.now(),
+        blank=True,
+        verbose_name='дата создания',
         db_index=True
+    )
+    called_at = models.DateTimeField(
+        blank=True,
+        null=True,
+        verbose_name='дата звонка',
+        db_index=True,
+    )
+    delivered_at = models.DateTimeField(
+        blank=True,
+        null=True,
+        verbose_name='дата доставки',
+        db_index=True,
     )
     objects = OrderQuerySet.as_manager()
 
     class Meta:
         verbose_name = 'заказ'
         verbose_name_plural = 'заказы'
-        ordering = ['-created_at']
+        ordering = ['-registered_at']
 
     def __str__(self):
         return f'Заказ #{self.id} — {self.firstname} {self.lastname}'

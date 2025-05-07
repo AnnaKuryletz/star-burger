@@ -92,7 +92,7 @@ def view_restaurants(request):
 def view_orders(request):
     orders = (Order.objects
     .with_total_price()
-    .exclude(status=Order.Status.DONE)
+    .exclude(status='completed')
     .order_by('-id'))
     return render(request, template_name='order_items.html', context={'order_items': orders})
 
