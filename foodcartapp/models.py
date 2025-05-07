@@ -152,7 +152,11 @@ class Order(models.Model):
         default=Status.RAW,
         db_index=True,
     )
-
+    comment = models.TextField(
+        blank=True,
+        null=False,
+        verbose_name='комментарий',
+    )
     firstname = models.CharField(
         'имя',
         max_length=50
