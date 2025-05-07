@@ -9,6 +9,9 @@ from .models import Restaurant
 from .models import RestaurantMenuItem
 from .models import Order
 from .models import OrderItem
+from urllib.parse import urlencode
+from django.utils.http import url_has_allowed_host_and_scheme
+from django.shortcuts import redirect
 
 
 
@@ -22,6 +25,11 @@ class OrderItemInline(admin.TabularInline):
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
     inlines = [OrderItemInline, ]
+    def response_change(self, request, obj):
+        next_url = request.GET.get('next')
+        if next_url and url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
+            return redirect(next_url)
+        return super().response_change(request, obj)
  
 @admin.register(OrderItem)
 class OrderItemAdmin(admin.ModelAdmin):

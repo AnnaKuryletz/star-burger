@@ -138,6 +138,21 @@ class RestaurantMenuItem(models.Model):
     
 
 class Order(models.Model):
+    class Status(models.TextChoices):
+        RAW = 'raw', 'Необработанный'
+        CONFIRMED = 'confirmed', 'Подтверждён'
+        ASSEMBLING = 'assembling', 'Собирается'
+        DELIVERING = 'delivering', 'Доставляется'
+        DONE = 'done', 'Выполнен'
+
+    status = models.CharField(
+        verbose_name='статус',
+        max_length=20,
+        choices=Status.choices,
+        default=Status.RAW,
+        db_index=True,
+    )
+
     firstname = models.CharField(
         'имя',
         max_length=50
