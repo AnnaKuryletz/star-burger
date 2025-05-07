@@ -7,8 +7,34 @@ from django.shortcuts import redirect, render
 from django.urls import reverse_lazy
 from django.views import View
 from django.db.models import Prefetch
-
+from django.conf import settings
 from foodcartapp.models import Order, Product, Restaurant, RestaurantMenuItem
+from django.conf import settings
+from collections import defaultdict
+from django.shortcuts import render
+from django.contrib.auth.decorators import user_passes_test
+from geopy.distance import geodesic
+import requests
+import logging
+
+from foodcartapp.models import Order
+
+from geopy.geocoders import Yandex
+from geopy.distance import distance
+from geopy.exc import GeocoderServiceError
+
+geolocator = Yandex(api_key=settings.YANDEX_GEOCODER_API_KEY)
+
+
+def fetch_coordinates(address):
+    try:
+        location = geolocator.geocode(address)
+        if location:
+            return (location.latitude, location.longitude)
+    except GeocoderServiceError:
+        return None
+    return None
+
 
 
 class Login(forms.Form):
@@ -90,6 +116,15 @@ def view_restaurants(request):
     })
 
 
+
+
+GEOCODER_API_KEY = settings.YANDEX_GEOCODER_API_KEY
+GEOCODER_API_URL = 'https://geocode-maps.yandex.ru/1.x'
+
+logger = logging.getLogger(__name__)
+
+
+
 @user_passes_test(is_manager, login_url='restaurateur:login')
 def view_orders(request):
     orders = (
@@ -109,19 +144,61 @@ def view_orders(request):
 
     restaurants = list(Restaurant.objects.all())
 
-    order_infos = []
+    restaurant_locations = {}
+    for restaurant in restaurants:
+        coords = fetch_coordinates(settings.YANDEX_GEOCODER_API_KEY, restaurant.address)
+        if coords:
+            restaurant_locations[restaurant.id] = coords
 
+    order_infos = []
     for order in orders:
         products = [item.product for item in order.items.all()]
         suitable_restaurants = []
+        order_coords = fetch_coordinates(settings.YANDEX_GEOCODER_API_KEY, order.address)
 
-        for restaurant in restaurants:
-            if all(restaurant.id in available_in[product.id] for product in products):
-                suitable_restaurants.append(restaurant)
+        if order_coords:
+            for restaurant in restaurants:
+                if all(restaurant.id in available_in[product.id] for product in products):
+                    coords = restaurant_locations.get(restaurant.id)
+                    if coords:
+                        distance = geodesic(order_coords, coords).km
+                        suitable_restaurants.append((restaurant, round(distance, 3)))
+        else:
+            suitable_restaurants = None
+
+        assigned_restaurant_info = None
+        assigned_restaurant = next((r for r in restaurants if r.id == order.restaurant_id), None)
+        if assigned_restaurant:
+            assigned_coords = restaurant_locations.get(order.restaurant_id)
+            if order_coords and assigned_coords:
+                distance = geodesic(order_coords, assigned_coords).km
+                assigned_restaurant_info = (assigned_restaurant, round(distance, 3))
+            else:
+                assigned_restaurant_info = (assigned_restaurant, None)
 
         order_infos.append({
             'order': order,
             'available_restaurants': suitable_restaurants,
+            'assigned_restaurant_info': assigned_restaurant_info,
         })
 
     return render(request, 'order_items.html', {'order_infos': order_infos})
+
+
+def fetch_coordinates(GEOCODER_API_KEY, address):
+    try:
+        response = requests.get(GEOCODER_API_URL, params={
+            'geocode': address,
+            'apikey': GEOCODER_API_KEY,
+            'format': 'json',
+        })
+        response.raise_for_status()
+        found_places = response.json()['response']['GeoObjectCollection']['featureMember']
+        if not found_places:
+            return None
+        most_relevant = found_places[0]
+        lon, lat = map(float, most_relevant['GeoObject']['Point']['pos'].split(" "))
+        return lat, lon
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Geocoding request failed: {e}")
+        return None

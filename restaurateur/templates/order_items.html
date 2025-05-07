@@ -36,23 +36,31 @@
       <td>{{ order.phonenumber }}</td>
       <td>{{ order.address }}</td>
       <td>{{ order.comment }}</td>
-
       <td>
-        {% if order.restaurant %}
-          ✅ {{ order.restaurant.name }}
+        {% if info.geocode_error %}
+          Ошибка определения координат
+        {% elif info.assigned_restaurant_info %}
+          {% with assigned=info.assigned_restaurant_info %}
+            {% if assigned.1 %}
+              Готовит {{ assigned.0.name }} – {{ assigned.1|stringformat:".2f" }} км
+            {% else %}
+              Готовит {{ assigned.0.name }}
+            {% endif %}
+          {% endwith %}
+        {% elif info.available_restaurants %}
+          Может быть приготовлен ресторанами:
+          <ul>
+            {% for restaurant, dist in info.available_restaurants %}
+              <li>{{ restaurant.name }} – {{ dist|stringformat:".2f" }} км</li>
+            {% endfor %}
+          </ul>
         {% else %}
-          <details>
-            <summary>Возможные рестораны</summary>
-            <ul>
-              {% for restaurant in info.available_restaurants %}
-                <li>{{ restaurant.name }}</li>
-              {% empty %}
-                <li><em>Нет доступных ресторанов</em></li>
-              {% endfor %}
-            </ul>
-          </details>
+          Нет подходящих ресторанов
         {% endif %}
       </td>
+      
+    
+      
 
       <td>
         <a href="{% url 'admin:foodcartapp_order_change' order.id %}?next={{ request.path }}">Редактировать</a>
