@@ -93,8 +93,12 @@ def register_order(request):
         phonenumber=phonenumber,
     )
     for product in products_list:
+        product_obj = product.get('product')
         OrderItem.objects.create(
-            order=order, product=product["product"], quantity=product["quantity"], price=product["product"].price,
+            order_id=order.id,
+            product_id=product_obj.id,
+            quantity=product.get('quantity'),
+            price=product_obj.price,
         )
 
     order_serializer = OrderSerializer(order)
