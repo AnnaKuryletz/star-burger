@@ -1,13 +1,13 @@
+from django.db import transaction
 from django.http import JsonResponse
 from django.templatetags.static import static
-from .serializers import OrderSerializer
-from django.db import transaction
 
-from .models import Product, Order, OrderItem
+from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from rest_framework import status
 
+from .models import Order, OrderItem, Product
+from .serializers import OrderSerializer
 
 def banners_list_api(request):
     # FIXME move data to db?

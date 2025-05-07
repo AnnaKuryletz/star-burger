@@ -1,8 +1,10 @@
-from django.db import models
-from django.core.validators import MinValueValidator
-from phonenumber_field.modelfields import PhoneNumberField
-from django.db.models import Sum, F, DecimalField
 from decimal import Decimal
+
+from django.core.validators import MinValueValidator
+from django.db import models
+from django.db.models import DecimalField, F, Sum
+
+from phonenumber_field.modelfields import PhoneNumberField
 
 
 class OrderQuerySet(models.QuerySet):

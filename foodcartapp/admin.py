@@ -1,18 +1,12 @@
+from urllib.parse import urlencode
+
 from django.contrib import admin
-from django.shortcuts import reverse
+from django.shortcuts import redirect, reverse
 from django.templatetags.static import static
 from django.utils.html import format_html
-
-from .models import Product
-from .models import ProductCategory
-from .models import Restaurant
-from .models import RestaurantMenuItem
-from .models import Order
-from .models import OrderItem
-from urllib.parse import urlencode
 from django.utils.http import url_has_allowed_host_and_scheme
-from django.shortcuts import redirect
 
+from .models import Order, OrderItem, Product, ProductCategory, Restaurant, RestaurantMenuItem
 
 
 class OrderItemInline(admin.TabularInline):
