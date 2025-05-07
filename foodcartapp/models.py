@@ -186,6 +186,14 @@ class Order(models.Model):
         db_index=True,
         verbose_name='Способ оплаты',
     )
+    restaurant = models.ForeignKey(
+        Restaurant,
+        verbose_name="Ресторан",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="orders",
+    )
     registered_at = models.DateTimeField(
         default=timezone.now(),
         blank=True,
@@ -211,6 +219,11 @@ class Order(models.Model):
         verbose_name_plural = 'заказы'
         ordering = ['-registered_at']
 
+    def save(self, *args, **kwargs):
+        if self.restaurant and self.status == 'raw':
+            self.status = 'in_progress'
+        super().save(*args, **kwargs)
+        
     def __str__(self):
         return f'Заказ #{self.id} — {self.firstname} {self.lastname}'
     
@@ -240,6 +253,8 @@ class OrderItem(models.Model):
         blank=False,
         validators=[MinValueValidator(Decimal('0.01'))]
     )
+    
+
 
     class Meta:
         verbose_name = 'элемент заказа'
