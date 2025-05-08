@@ -71,8 +71,6 @@ def product_list_api(request):
     )
 
 
-PHONE_REGEX = r"^\+79\d{9}$"
-
 @transaction.atomic
 @api_view(["POST"])
 def register_order(request):
@@ -91,6 +89,7 @@ def register_order(request):
         lastname=lastname,
         address=address,
         phonenumber=phonenumber,
+        status='raw',
     )
     for product in products_list:
         product_obj = product.get('product')

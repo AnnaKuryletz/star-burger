@@ -13,6 +13,7 @@ from django.conf import settings
 from collections import defaultdict
 from django.shortcuts import render
 from django.contrib.auth.decorators import user_passes_test
+from django.db.models import Case, When, IntegerField
 import requests
 import logging
 
@@ -135,12 +136,20 @@ def view_restaurants(request):
 @user_passes_test(is_manager, login_url="restaurateur:login")
 def view_orders(request):
     orders = (
-        Order.objects.with_total_price()
-        .exclude(status="completed")
-        .prefetch_related("items__product")
-        .select_related("restaurant")
-        .order_by("-id")
+    Order.objects
+    .with_total_price()
+    .exclude(status='completed')
+    .annotate(
+        is_raw=Case(
+            When(status='raw', then=1),
+            default=0,
+            output_field=IntegerField()
+        )
     )
+    .prefetch_related('items__product')
+    .select_related('restaurant')
+    .order_by('-is_raw', '-id')
+)
 
     menu_items = RestaurantMenuItem.objects.filter(availability=True).select_related(
         "restaurant", "product"
@@ -152,7 +161,6 @@ def view_orders(request):
 
     restaurants = list(Restaurant.objects.all())
 
-    # Кеш координат ресторанов
     for restaurant in restaurants:
         if not restaurant.lat or not restaurant.lon:
             lat, lon = fetch_coordinates(
@@ -168,7 +176,6 @@ def view_orders(request):
     for order in orders:
         products = [item.product for item in order.items.all()]
 
-        # Кеш координат заказа
         if not order.lat or not order.lon:
             lat, lon = fetch_coordinates(
                 settings.YANDEX_GEOCODER_API_KEY, order.address
