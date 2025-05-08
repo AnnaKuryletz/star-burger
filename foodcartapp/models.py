@@ -17,6 +17,7 @@ class OrderQuerySet(models.QuerySet):
             )
         )
 
+
 class Restaurant(models.Model):
     name = models.CharField(
         'название',
@@ -32,6 +33,8 @@ class Restaurant(models.Model):
         max_length=50,
         blank=True,
     )
+    lat = models.FloatField(verbose_name='широта', null=True, blank=True)
+    lon = models.FloatField(verbose_name='долгота', null=True, blank=True)
 
     class Meta:
         verbose_name = 'ресторан'
@@ -213,7 +216,8 @@ class Order(models.Model):
         db_index=True,
     )
     objects = OrderQuerySet.as_manager()
-
+    lat = models.FloatField(verbose_name='широта', null=True, blank=True)
+    lon = models.FloatField(verbose_name='долгота', null=True, blank=True)
     class Meta:
         verbose_name = 'заказ'
         verbose_name_plural = 'заказы'
@@ -223,7 +227,7 @@ class Order(models.Model):
         if self.restaurant and self.status == 'raw':
             self.status = 'in_progress'
         super().save(*args, **kwargs)
-        
+
     def __str__(self):
         return f'Заказ #{self.id} — {self.firstname} {self.lastname}'
     
@@ -254,8 +258,6 @@ class OrderItem(models.Model):
         validators=[MinValueValidator(Decimal('0.01'))]
     )
     
-
-
     class Meta:
         verbose_name = 'элемент заказа'
         verbose_name_plural = 'элементы заказа'
