@@ -41,7 +41,7 @@ class Restaurant(models.Model):
         verbose_name='координаты',
         related_name='restaurants'
     )
-    
+
     class Meta:
         verbose_name = 'ресторан'
         verbose_name_plural = 'рестораны'
@@ -261,7 +261,7 @@ class OrderItem(models.Model):
     )
     quantity = models.PositiveIntegerField(
         'количество',
-        default=1
+        validators=[MinValueValidator(1)]
     )
     price = models.DecimalField(
         'цена за единицу',
