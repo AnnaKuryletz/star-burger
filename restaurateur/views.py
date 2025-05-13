@@ -18,7 +18,10 @@ import requests
 import logging
 
 from foodcartapp.models import Order
-from foodcartapp.services.geolocation import fetch_coordinates, get_or_update_coordinates
+from foodcartapp.services.geolocation import (
+    fetch_coordinates,
+    get_or_update_coordinates,
+)
 
 from geopy.geocoders import Yandex
 from geopy.distance import distance
@@ -131,9 +134,7 @@ def view_orders(request):
         .exclude(status="completed")
         .annotate(
             is_raw=Case(
-                When(status="raw", then=1),
-                default=0,
-                output_field=IntegerField()
+                When(status="raw", then=1), default=0, output_field=IntegerField()
             )
         )
         .select_related("restaurant", "location")
@@ -159,7 +160,7 @@ def view_orders(request):
             obj=restaurant,
             address=restaurant.address,
             coords_cache=restaurant_coords,
-            updated_objects=restaurants_to_update
+            updated_objects=restaurants_to_update,
         )
 
     if restaurants_to_update:
@@ -173,14 +174,14 @@ def view_orders(request):
             obj=order,
             address=order.address,
             coords_cache=order_coords,
-            updated_objects=orders_to_update
+            updated_objects=orders_to_update,
         )
 
     if orders_to_update:
         Order.objects.bulk_update(orders_to_update, ["location"])
         Location.objects.bulk_update(
             [order.location for order in orders_to_update if order.location],
-            ["lat", "lon"]
+            ["lat", "lon"],
         )
 
     order_infos = []

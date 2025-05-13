@@ -20,10 +20,6 @@ def fetch_coordinates(api_key, address):
 
 
 def get_or_update_coordinates(obj, address, coords_cache, updated_objects):
-    """
-    Обновляет координаты объекта (Restaurant или Order), если их нет.
-    Кэширует координаты и добавляет объект в список для bulk_update.
-    """
     if obj.location and obj.location.lat and obj.location.lon:
         coords_cache[obj.id] = (obj.location.lat, obj.location.lon)
         return
@@ -34,8 +30,7 @@ def get_or_update_coordinates(obj, address, coords_cache, updated_objects):
         return
 
     location, _ = Location.objects.get_or_create(
-        address=address,
-        defaults={"lat": lat, "lon": lon}
+        address=address, defaults={"lat": lat, "lon": lon}
     )
 
     updated = False
