@@ -71,6 +71,7 @@ def product_list_api(request):
     )
 
 
+# views.py
 @transaction.atomic
 @api_view(["POST"])
 def register_order(request):
@@ -78,28 +79,5 @@ def register_order(request):
     if not serializer.is_valid():
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    products_list = serializer.validated_data["products"]
-    firstname = serializer.validated_data["firstname"]
-    lastname = serializer.validated_data["lastname"]
-    address = serializer.validated_data["address"]
-    phonenumber = serializer.validated_data["phonenumber"]
-
-    order = Order.objects.create(
-        firstname=firstname,
-        lastname=lastname,
-        address=address,
-        phonenumber=phonenumber,
-        status='raw',
-    )
-    for product in products_list:
-        product_obj = product.get('product')
-        OrderItem.objects.create(
-            order_id=order.id,
-            product_id=product_obj.id,
-            quantity=product.get('quantity'),
-            price=product_obj.price,
-        )
-
-    order_serializer = OrderSerializer(order)
-
-    return Response(order_serializer.data, status=status.HTTP_201_CREATED)
+    order = serializer.save() 
+    return Response(OrderSerializer(order).data, status=status.HTTP_201_CREATED)
