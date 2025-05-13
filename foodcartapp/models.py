@@ -33,9 +33,15 @@ class Restaurant(models.Model):
         max_length=50,
         blank=True,
     )
-    lat = models.FloatField(verbose_name='широта', null=True, blank=True)
-    lon = models.FloatField(verbose_name='долгота', null=True, blank=True)
-
+    location = models.ForeignKey(
+        'Location',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name='координаты',
+        related_name='restaurants'
+    )
+    
     class Meta:
         verbose_name = 'ресторан'
         verbose_name_plural = 'рестораны'
@@ -215,9 +221,17 @@ class Order(models.Model):
         verbose_name='дата доставки',
         db_index=True,
     )
+    location = models.ForeignKey(
+        'Location',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name='координаты',
+        related_name='orders'
+    )
+
     objects = OrderQuerySet.as_manager()
-    lat = models.FloatField(verbose_name='широта', null=True, blank=True)
-    lon = models.FloatField(verbose_name='долгота', null=True, blank=True)
+    
     class Meta:
         verbose_name = 'заказ'
         verbose_name_plural = 'заказы'
@@ -269,5 +283,18 @@ class OrderItem(models.Model):
         if not self.price:
             self.price = self.product.price
         super().save(*args, **kwargs)
+
+
+class Location(models.Model):
+    address = models.CharField('адрес', max_length=255, unique=True)
+    lat = models.FloatField('широта', null=True, blank=True)
+    lon = models.FloatField('долгота', null=True, blank=True)
+
+    class Meta:
+        verbose_name = 'координаты'
+        verbose_name_plural = 'координаты'
+
+    def __str__(self):
+        return self.address
 
 
