@@ -88,12 +88,12 @@ class Product(models.Model):
         on_delete=models.SET_NULL,
     )
     price = models.DecimalField(
-        'цена',
+        'цена за единицу',
         max_digits=8,
         decimal_places=2,
         null=False,
         blank=False,
-        validators=[MinValueValidator(0)]
+        validators=[MinValueValidator(Decimal('0.00'))]
     )
     image = models.ImageField(
         'картинка'
@@ -269,7 +269,7 @@ class OrderItem(models.Model):
         decimal_places=2,
         null=False,
         blank=False,
-        validators=[MinValueValidator(Decimal('0.01'))]
+        validators=[MinValueValidator(Decimal('0.00'))]
     )
     
     class Meta:
