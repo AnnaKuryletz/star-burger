@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from foodcartapp.models import Order, OrderItem
+from rest_framework.serializers import ModelSerializer
 
 
 class OrderItemSerializer(serializers.ModelSerializer):
@@ -8,7 +9,8 @@ class OrderItemSerializer(serializers.ModelSerializer):
         fields = ['product', 'quantity']
 
 
-class OrderSerializer(serializers.ModelSerializer):
+
+class OrderSerializer(ModelSerializer):
     products = OrderItemSerializer(many=True, allow_empty=False, write_only=True)
 
     class Meta:
@@ -17,17 +19,17 @@ class OrderSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         products_data = validated_data.pop('products')
-        order = Order.objects.create(**validated_data, status='raw')  # Установка статуса по умолчанию
+        order = Order.objects.create(**validated_data)
 
         order_items = [
             OrderItem(
                 order=order,
-                product=item['product'],
-                quantity=item['quantity'],
-                price=item['product'].price,
+                product=product_data['product'],
+                quantity=product_data['quantity'],
+                price=product_data['product'].price,
             )
-            for item in products_data
+            for product_data in products_data
         ]
-        OrderItem.objects.bulk_create(order_items)  # Быстрая вставка
 
+        OrderItem.objects.bulk_create(order_items)
         return order
