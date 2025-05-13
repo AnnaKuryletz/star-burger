@@ -18,6 +18,7 @@ import requests
 import logging
 
 from foodcartapp.models import Order
+from foodcartapp.services.geolocation import fetch_coordinates, get_or_update_coordinates
 
 from geopy.geocoders import Yandex
 from geopy.distance import distance
@@ -28,16 +29,6 @@ GEOCODER_API_KEY = settings.YANDEX_GEOCODER_API_KEY
 GEOCODER_API_URL = "https://geocode-maps.yandex.ru/1.x"
 
 logger = logging.getLogger(__name__)
-
-
-def fetch_coordinates(address):
-    try:
-        location = geolocator.geocode(address)
-        if location:
-            return (location.latitude, location.longitude)
-    except GeocoderServiceError:
-        return None
-    return None
 
 
 class Login(forms.Form):
@@ -140,7 +131,9 @@ def view_orders(request):
         .exclude(status="completed")
         .annotate(
             is_raw=Case(
-                When(status="raw", then=1), default=0, output_field=IntegerField()
+                When(status="raw", then=1),
+                default=0,
+                output_field=IntegerField()
             )
         )
         .select_related("restaurant", "location")
@@ -149,6 +142,7 @@ def view_orders(request):
     )
 
     restaurants = list(Restaurant.objects.select_related("location").order_by("name"))
+
     menu_items = RestaurantMenuItem.objects.filter(availability=True).select_related(
         "restaurant", "product"
     )
@@ -157,53 +151,36 @@ def view_orders(request):
     for item in menu_items:
         available_in[item.product_id].add(item.restaurant_id)
 
-    restaurants_to_update = []
     restaurant_coords = {}
+    restaurants_to_update = []
 
     for restaurant in restaurants:
-        if restaurant.location.lat and restaurant.location.lon:
-            restaurant_coords[restaurant.id] = (
-                restaurant.location.lat,
-                restaurant.location.lon,
-            )
-        else:
-            lat, lon = fetch_coordinates(
-                settings.YANDEX_GEOCODER_API_KEY, restaurant.address
-            )
-            restaurant.location.lat = lat
-            restaurant.location.lon = lon
-            restaurant_coords[restaurant.id] = (lat, lon) if lat and lon else None
-            restaurants_to_update.append(restaurant)
+        get_or_update_coordinates(
+            obj=restaurant,
+            address=restaurant.address,
+            coords_cache=restaurant_coords,
+            updated_objects=restaurants_to_update
+        )
 
     if restaurants_to_update:
         Restaurant.objects.bulk_update(restaurants_to_update, ["location"])
 
-    orders_to_update = []
     order_coords = {}
+    orders_to_update = []
+
     for order in orders:
-        if order.location and order.location.lat and order.location.lon:
-            order_coords[order.id] = (order.location.lat, order.location.lon)
-        else:
-            lat, lon = fetch_coordinates(
-                settings.YANDEX_GEOCODER_API_KEY, order.address
-            )
-            if lat and lon:
-                location, _ = Location.objects.get_or_create(
-                    address=order.address, defaults={"lat": lat, "lon": lon}
-                )
-                if location.lat is None or location.lon is None:
-                    location.lat = lat
-                    location.lon = lon
-                    location.save()
-                order.location = location
-                order_coords[order.id] = (lat, lon)
-                orders_to_update.append(order)
+        get_or_update_coordinates(
+            obj=order,
+            address=order.address,
+            coords_cache=order_coords,
+            updated_objects=orders_to_update
+        )
 
     if orders_to_update:
         Order.objects.bulk_update(orders_to_update, ["location"])
         Location.objects.bulk_update(
             [order.location for order in orders_to_update if order.location],
-            ["lat", "lon"],
+            ["lat", "lon"]
         )
 
     order_infos = []
@@ -246,19 +223,3 @@ def view_orders(request):
         )
 
     return render(request, "order_items.html", {"order_infos": order_infos})
-
-
-def fetch_coordinates(api_key, address):
-    url = "https://geocode-maps.yandex.ru/1.x"
-    params = {"apikey": api_key, "geocode": address, "format": "json"}
-    try:
-        response = requests.get(url, params=params)
-        response.raise_for_status()
-        geo_data = response.json()
-        coords = geo_data["response"]["GeoObjectCollection"]["featureMember"][0][
-            "GeoObject"
-        ]["Point"]["pos"]
-        lon, lat = map(float, coords.split(" "))
-        return lat, lon
-    except (IndexError, KeyError, ValueError, requests.RequestException):
-        return None, None
