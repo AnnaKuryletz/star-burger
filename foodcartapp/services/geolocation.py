@@ -2,6 +2,8 @@ import requests
 from django.conf import settings
 from foodcartapp.models import Location
 
+from geopy.geocoders import Yandex
+
 
 def fetch_coordinates(api_key, address):
     url = "https://geocode-maps.yandex.ru/1.x"
@@ -18,30 +20,29 @@ def fetch_coordinates(api_key, address):
     except (IndexError, KeyError, ValueError, requests.RequestException):
         return None, None
 
-
 def get_or_update_coordinates(obj, address, coords_cache, updated_objects):
-    if obj.location and obj.location.lat and obj.location.lon:
-        coords_cache[obj.id] = (obj.location.lat, obj.location.lon)
-        return
+    if address in coords_cache:
+        coords = coords_cache[address]
+    else:
+        geolocator = Yandex(api_key=settings.YANDEX_GEOCODER_API_KEY)
+        location, _ = Location.objects.get_or_create(address=address)
 
-    lat, lon = fetch_coordinates(settings.YANDEX_GEOCODER_API_KEY, address)
-    if not (lat and lon):
-        coords_cache[obj.id] = None
-        return
+        if not location.lat or not location.lon:
+            try:
+                geo = geolocator.geocode(address)
+                if geo:
+                    location.lat = geo.latitude
+                    location.lon = geo.longitude
+                    location.save()
+            except Exception as e:
+                print(f"Geocoding error: {e}")
+                coords_cache[address] = None
+                return
 
-    location, _ = Location.objects.get_or_create(
-        address=address, defaults={"lat": lat, "lon": lon}
-    )
+        coords = (location.lat, location.lon) if location.lat and location.lon else None
+        coords_cache[address] = coords
 
-    updated = False
-    if location.lat is None or location.lon is None:
-        location.lat = lat
-        location.lon = lon
-        updated = True
-
-    obj.location = location
-    coords_cache[obj.id] = (lat, lon)
-    updated_objects.append(obj)
-
-    if updated:
-        location.save()
+    if coords:
+        location = Location.objects.get(address=address)
+        obj.location = location
+        updated_objects.append(obj)

@@ -6,7 +6,7 @@ from django.templatetags.static import static
 from django.utils.html import format_html
 from django.utils.http import url_has_allowed_host_and_scheme
 
-from .models import Order, OrderItem, Product, ProductCategory, Restaurant, RestaurantMenuItem
+from .models import Order, OrderItem, Product, ProductCategory, Restaurant, RestaurantMenuItem, Location
 
 
 class OrderItemInline(admin.TabularInline):
@@ -15,6 +15,10 @@ class OrderItemInline(admin.TabularInline):
     readonly_fields = ['product', 'quantity', 'price']
     can_delete = False
 
+
+@admin.register(Location)
+class LocationAdmin(admin.ModelAdmin):
+    list_display = ['address' ,'lat', 'lon']
 
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):

@@ -2,6 +2,10 @@ from rest_framework import serializers
 from foodcartapp.models import Order, OrderItem
 from rest_framework.serializers import ModelSerializer
 
+from foodcartapp.services.geolocation import (
+    get_or_update_coordinates,
+)
+
 
 class OrderItemSerializer(serializers.ModelSerializer):
     class Meta:
@@ -20,6 +24,19 @@ class OrderSerializer(ModelSerializer):
         products_data = validated_data.pop("products")
         order = Order.objects.create(**validated_data)
 
+        coords_cache = {} 
+        updated_orders = []
+
+        get_or_update_coordinates(
+            obj=order,
+            address=order.address,
+            coords_cache=coords_cache,
+            updated_objects=updated_orders,
+        )
+
+        if updated_orders:
+            Order.objects.bulk_update(updated_orders, ["location"])
+
         order_items = [
             OrderItem(
                 order=order,
@@ -29,6 +46,5 @@ class OrderSerializer(ModelSerializer):
             )
             for product_data in products_data
         ]
-
         OrderItem.objects.bulk_create(order_items)
         return order
