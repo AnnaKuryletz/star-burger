@@ -20,6 +20,7 @@ def fetch_coordinates(api_key, address):
     except (IndexError, KeyError, ValueError, requests.RequestException):
         return None, None
 
+
 def get_or_update_coordinates(obj, address, coords_cache, updated_objects):
     if address in coords_cache:
         coords = coords_cache[address]
