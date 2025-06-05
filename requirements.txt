@@ -5,5 +5,5 @@ environs[django]==9.3.2
 marshmallow==3.19.0
 phonenumbers==9.0.4
 django-phonenumber-field==7.1.0
-djangorestframework==3.16.0
+djangorestframework==3.14.0
 geopy==2.4.1
