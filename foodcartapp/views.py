@@ -9,6 +9,7 @@ from rest_framework.response import Response
 from .models import Order, OrderItem, Product
 from .serializers import OrderSerializer
 
+
 def banners_list_api(request):
     # FIXME move data to db?
     return JsonResponse(
@@ -76,6 +77,6 @@ def product_list_api(request):
 def register_order(request):
     serializer = OrderSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
-    order = serializer.save()  
+    order = serializer.save()
 
     return Response(OrderSerializer(order).data, status=status.HTTP_201_CREATED)

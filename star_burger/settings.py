@@ -1,8 +1,10 @@
 import os
 
-import dj_database_url
 
 from environs import Env
+
+
+from django.conf import settings
 
 
 env = Env()
@@ -42,6 +44,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'debug_toolbar.middleware.DebugToolbarMiddleware',
+    'rollbar.contrib.django.middleware.RollbarNotifierMiddleware',
 ]
 
 ROOT_URLCONF = 'star_burger.urls'
@@ -78,6 +81,13 @@ TEMPLATES = [
         },
     },
 ]
+
+ROLLBAR = {
+    'access_token': env('ROLLBAR_TOKEN'),
+    'environment': env('ROLLBAR_ENVIRONMENT', 'production'),
+    'code_version': '1.0',
+    'root': BASE_DIR,
+}
 
 WSGI_APPLICATION = 'star_burger.wsgi.application'
 
@@ -124,6 +134,6 @@ INTERNAL_IPS = [
 
 
 STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, "assets"),
     os.path.join(BASE_DIR, "bundles"),
+    os.path.join(BASE_DIR, "assets"),
 ]

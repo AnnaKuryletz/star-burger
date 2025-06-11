@@ -26,6 +26,7 @@ from geopy.geocoders import Yandex
 from geopy.distance import distance
 from geopy.exc import GeocoderServiceError
 
+
 geolocator = Yandex(api_key=settings.YANDEX_GEOCODER_API_KEY)
 GEOCODER_API_KEY = settings.YANDEX_GEOCODER_API_KEY
 GEOCODER_API_URL = "https://geocode-maps.yandex.ru/1.x"
@@ -39,7 +40,8 @@ class Login(forms.Form):
         max_length=75,
         required=True,
         widget=forms.TextInput(
-            attrs={"class": "form-control", "placeholder": "Укажите имя пользователя"}
+            attrs={"class": "form-control",
+                   "placeholder": "Укажите имя пользователя"}
         ),
     )
     password = forms.CharField(
@@ -103,7 +105,8 @@ def view_products(request):
             availability.get(restaurant.id, False) for restaurant in restaurants
         ]
 
-        products_with_restaurant_availability.append((product, ordered_availability))
+        products_with_restaurant_availability.append(
+            (product, ordered_availability))
 
     return render(
         request,
@@ -163,7 +166,7 @@ def view_orders(request):
         if location and location.lat and location.lon:
             restaurant_coords[restaurant.id] = (location.lat, location.lon)
         else:
-            restaurant_coords[restaurant.id] = None  
+            restaurant_coords[restaurant.id] = None
 
     order_coords = {}
     for order in orders:
@@ -171,7 +174,7 @@ def view_orders(request):
         if location and location.lat and location.lon:
             order_coords[order.id] = (location.lat, location.lon)
         else:
-            order_coords[order.id] = None  
+            order_coords[order.id] = None
 
     order_infos = []
     for order in orders:
@@ -186,7 +189,8 @@ def view_orders(request):
                     rest_point = restaurant_coords.get(restaurant.id)
                     if rest_point:
                         dist = distance(order_point, rest_point).km
-                        suitable_restaurants.append((restaurant, round(dist, 2)))
+                        suitable_restaurants.append(
+                            (restaurant, round(dist, 2)))
 
             suitable_restaurants.sort(key=lambda r: r[1])
 
@@ -194,7 +198,8 @@ def view_orders(request):
         if order.restaurant:
             rest_point = restaurant_coords.get(order.restaurant.id)
             if order_point and rest_point:
-                assigned_info = (order.restaurant, round(distance(order_point, rest_point).km, 2))
+                assigned_info = (order.restaurant, round(
+                    distance(order_point, rest_point).km, 2))
             else:
                 assigned_info = (order.restaurant, None)
 

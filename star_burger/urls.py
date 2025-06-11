@@ -23,7 +23,8 @@ from . import settings
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', render, kwargs={'template_name': 'index.html'}, name='start_page'),
+    path('', render, kwargs={
+         'template_name': 'index.html'}, name='start_page'),
     path('api/', include('foodcartapp.urls')),
     path('manager/', include('restaurateur.urls')),
     path('api-auth/', include('rest_framework.urls'))
