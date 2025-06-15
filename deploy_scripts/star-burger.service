@@ -1,0 +1,17 @@
+[Unit]
+Description=Gunicorn instance to serve star-burger
+After=network.target postgresql@16-main.service
+Requires=postgresql@16-main.service
+
+[Service]
+User=root
+Group=www-data
+WorkingDirectory=/opt/star-burger
+Environment="PATH=/opt/star-burger/venv/bin"
+EnvironmentFile=/opt/star-burger/.env
+ExecStart=/opt/star-burger/venv/bin/gunicorn --workers 3 --bind 127.0.0.1:8000 star_burger.wsgi:application
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+

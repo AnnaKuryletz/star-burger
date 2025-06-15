@@ -1,0 +1,14 @@
+[Unit]
+Description=Django clear session
+After=network.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/star-burger
+ExecStart=/opt/star-burger/venv/bin/python /opt/star-burger/manage.py clearsessions
+User=root
+EnvironmentFile=/opt/star-burger/.env
+
+[Install]
+WantedBy=multi-user.target
+
